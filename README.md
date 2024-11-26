@@ -13,8 +13,6 @@ This repository contains the code to reproduce the results in the paper "Optimiz
     - `real/llm/`: Boosting LLM Alignment (Section 6.2)
 - `requirements.txt`: A list of required python packages
 
-Inside each subfolder, `bash/` contains the script for job submission to computing clusters.
-
 ## Workflow
 
 ### Simulation Experiments
