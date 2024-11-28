@@ -1,6 +1,6 @@
 # OptCS
 
-This repository contains the code to reproduce the results in the paper "Optimized Conformal Selection: Powerful Selective Inference After Conformity Score Optimization".
+This repository contains the code to reproduce the results in the paper [Optimized Conformal Selection: Powerful Selective Inference After Conformity Score Optimization](https://arxiv.org/abs/2411.17983).
 
 ## Folders
 
