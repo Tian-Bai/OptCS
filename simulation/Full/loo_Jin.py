@@ -16,7 +16,7 @@ import copy
 from imblearn.over_sampling import RandomOverSampler
 
 def LOO_train(mdl, Xtotal, Ytotal, LOO_range, Xtest, strategy, m=None):
-    """
+    r"""
     Conduct leave-one-out training and return predicted results.
     
     Parameters: 
@@ -50,35 +50,6 @@ def LOO_train(mdl, Xtotal, Ytotal, LOO_range, Xtest, strategy, m=None):
         if strategy == 'remove_m':
             zero_idx = np.where(Ytrain == 0)[0]
             remove_idx = np.random.choice(zero_idx, size=m-1, replace=False)
-            Xtrain, Ytrain = np.delete(Xtrain, remove_idx, axis=0), np.delete(Ytrain, remove_idx)
-        if strategy == 'remove_half':
-            zero_idx = np.where(Ytrain == 0)[0]
-            remove_idx = np.random.choice(zero_idx, size=(m-1) // 2, replace=False)
-            Xtrain, Ytrain = np.delete(Xtrain, remove_idx, axis=0), np.delete(Ytrain, remove_idx)
-        if strategy == 'remove_prob':
-            # first fit a binary classifier
-            classifier = RandomForestClassifier()
-            classifier.fit(Xtrain, Ytrain)
-            p = classifier.predict_proba(Xtrain)[:, 0]  # predicted 0 probability
-            r = np.where(Ytrain == 0, np.minimum(m / len(Xtotal) / p, 1), 0) # removal prob
-            mask = np.random.rand(len(Xtrain)) >= r
-            Xtrain, Ytrain = Xtrain[mask], Ytrain[mask]
-        if strategy == 'remove_dist':
-            idx = np.random.choice(len(Xtrain), size=m-1)
-            X_sample, Y_sample = Xtrain[idx], Ytrain[idx]
-
-            # first remove the zeros
-            sampled_zero_idx = idx[np.where(Y_sample == 0)[0]]
-            sampled_one_idx = idx[np.where(Y_sample == 1)[0]]
-            rem_zero_idx =np.setdiff1d(np.where(Ytrain == 0)[0], set(sampled_zero_idx))
-            
-            if len(sampled_zero_idx) < m-1:
-                nbrs = NearestNeighbors(n_neighbors=1, algorithm='auto').fit(Xtrain[rem_zero_idx])
-                _, nearest_idx = nbrs.kneighbors(Xtrain[sampled_one_idx])
-                remove_idx = np.concatenate((sampled_zero_idx, rem_zero_idx[nearest_idx.flatten()]))
-            else:
-                remove_idx = sampled_zero_idx
-
             Xtrain, Ytrain = np.delete(Xtrain, remove_idx, axis=0), np.delete(Ytrain, remove_idx)
 
         mdl.fit(Xtrain, Ytrain)
@@ -154,50 +125,6 @@ test_scores = -pred_test
 for j in range(ntest):
     LOO_12_pvals[j] = (np.sum(calib_scores < test_scores[j]) + (np.sum(calib_scores == test_scores[j]) + 1)) / (len(calib_scores) + 1)
 
-# LOO 1.3 - not very useful
-_, pred_all = LOO_train(init_model, Xtotal, Ytotal, np.arange(len(Xtotal)), None, strategy='remove_m', m=ntest)
-
-pred_labeled = pred_all[range(nlabel)]
-pred_test = pred_all[range(nlabel, nlabel+ntest)]
-
-calib_scores = 1000 * (Ylabel > 0) - pred_labeled
-test_scores = -pred_test
-for j in range(ntest):
-    LOO_13_pvals[j] = (np.sum(calib_scores < test_scores[j]) + (np.sum(calib_scores == test_scores[j]) + 1)) / (len(calib_scores) + 1)
-
-# LOO 1.4 - not very useful
-_, pred_all = LOO_train(init_model, Xtotal, Ytotal, np.arange(len(Xtotal)), None, strategy='remove_half', m=ntest)
-
-pred_labeled = pred_all[range(nlabel)]
-pred_test = pred_all[range(nlabel, nlabel+ntest)]
-
-calib_scores = 1000 * (Ylabel > 0) - pred_labeled
-test_scores = -pred_test
-for j in range(ntest):
-    LOO_14_pvals[j] = (np.sum(calib_scores < test_scores[j]) + (np.sum(calib_scores == test_scores[j]) + 1)) / (len(calib_scores) + 1)
-
-# LOO 1.5
-_, pred_all = LOO_train(init_model, Xtotal, Ytotal, np.arange(len(Xtotal)), None, strategy='remove_prob', m=ntest)
-
-pred_labeled = pred_all[range(nlabel)]
-pred_test = pred_all[range(nlabel, nlabel+ntest)]
-
-calib_scores = 1000 * (Ylabel > 0) - pred_labeled
-test_scores = -pred_test
-for j in range(ntest):
-    LOO_15_pvals[j] = (np.sum(calib_scores < test_scores[j]) + (np.sum(calib_scores == test_scores[j]) + 1)) / (len(calib_scores) + 1)
-
-# LOO 1.6
-_, pred_all = LOO_train(init_model, Xtotal, Ytotal, np.arange(len(Xtotal)), None, strategy='remove_dist', m=ntest)
-
-pred_labeled = pred_all[range(nlabel)]
-pred_test = pred_all[range(nlabel, nlabel+ntest)]
-
-calib_scores = 1000 * (Ylabel > 0) - pred_labeled
-test_scores = -pred_test
-for j in range(ntest):
-    LOO_16_pvals[j] = (np.sum(calib_scores < test_scores[j]) + (np.sum(calib_scores == test_scores[j]) + 1)) / (len(calib_scores) + 1)
-
 """ LOO version 2 - considering ntest subproblems, each having 1 unlabelled sample """
 
 LOO_2_pvals = np.zeros(ntest)
@@ -268,10 +195,6 @@ beta = 0.9 # a coefficient for pruning
 for qid, q in enumerate(q_list): 
     LOO_11_sel = BH(LOO_11_pvals, q)
     LOO_12_sel = BH(LOO_12_pvals, q)
-    LOO_13_sel = BH(LOO_13_pvals, q)
-    LOO_14_sel = BH(LOO_14_pvals, q)
-    LOO_15_sel = BH(LOO_15_pvals, q)
-    LOO_16_sel = BH(LOO_16_pvals, q)
     LOO_2_sel = BH(LOO_2_pvals, q)
 
     # LOO_2 with e-values
@@ -297,10 +220,6 @@ for qid, q in enumerate(q_list):
     # evaluate them
     LOO_11_FDP, LOO_11_power = eval(Ytest, LOO_11_sel, 0, np.inf)
     LOO_12_FDP, LOO_12_power = eval(Ytest, LOO_12_sel, 0, np.inf)
-    LOO_13_FDP, LOO_13_power = eval(Ytest, LOO_13_sel, 0, np.inf)
-    LOO_14_FDP, LOO_14_power = eval(Ytest, LOO_14_sel, 0, np.inf)
-    LOO_15_FDP, LOO_15_power = eval(Ytest, LOO_15_sel, 0, np.inf)
-    LOO_16_FDP, LOO_16_power = eval(Ytest, LOO_16_sel, 0, np.inf)
     LOO_2_FDP, LOO_2_power = eval(Ytest, LOO_2_sel, 0, np.inf)
 
     LOO_2e_dtm_FDP, LOO_2e_dtm_power = eval(Ytest, LOO_2e_dtm_sel, 0, np.inf)
@@ -318,14 +237,6 @@ for qid, q in enumerate(q_list):
         'LOO_11_power': [LOO_11_power],
         'LOO_12_FDP': [LOO_12_FDP],
         'LOO_12_power': [LOO_12_power],
-        'LOO_13_FDP': [LOO_13_FDP],
-        'LOO_13_power': [LOO_13_power],
-        'LOO_14_FDP': [LOO_14_FDP],
-        'LOO_14_power': [LOO_14_power],
-        'LOO_15_FDP': [LOO_15_FDP],
-        'LOO_15_power': [LOO_15_power],
-        'LOO_16_FDP': [LOO_16_FDP],
-        'LOO_16_power': [LOO_16_power],
         'LOO_2_FDP': [LOO_2_FDP],
         'LOO_2_power': [LOO_2_power],
         'LOO_2e_dtm_FDP': [LOO_2e_dtm_FDP],

@@ -196,35 +196,6 @@ def LOO_train_modsel(mdl_idx, Xtotal, Ytotal, LOO_range, Xtest, strategy, m=None
             zero_idx = np.where(Ytrain == 0)[0]
             remove_idx = np.random.choice(zero_idx, size=m-1, replace=False)
             Xtrain, Ytrain = np.delete(Xtrain, remove_idx, axis=0), np.delete(Ytrain, remove_idx)
-        if strategy == 'remove_half':
-            zero_idx = np.where(Ytrain == 0)[0]
-            remove_idx = np.random.choice(zero_idx, size=(m-1) // 2, replace=False)
-            Xtrain, Ytrain = np.delete(Xtrain, remove_idx, axis=0), np.delete(Ytrain, remove_idx)
-        if strategy == 'remove_prob':
-            # first fit a binary classifier
-            classifier = RandomForestClassifier()
-            classifier.fit(Xtrain, Ytrain)
-            p = classifier.predict_proba(Xtrain)[:, 0]  # predicted 0 probability
-            r = np.where(Ytrain == 0, np.minimum(m / len(Xtotal) / p, 1), 0) # removal prob
-            mask = np.random.rand(len(Xtrain)) >= r
-            Xtrain, Ytrain = Xtrain[mask], Ytrain[mask]
-        if strategy == 'remove_dist':
-            idx = np.random.choice(len(Xtrain), size=m-1)
-            X_sample, Y_sample = Xtrain[idx], Ytrain[idx]
-
-            # first remove the zeros
-            sampled_zero_idx = idx[np.where(Y_sample == 0)[0]]
-            sampled_one_idx = idx[np.where(Y_sample == 1)[0]]
-            rem_zero_idx = np.setdiff1d(np.where(Ytrain == 0)[0], set(sampled_zero_idx))
-            
-            if len(sampled_zero_idx) < m-1:
-                nbrs = NearestNeighbors(n_neighbors=1, algorithm='auto').fit(Xtrain[rem_zero_idx])
-                _, nearest_idx = nbrs.kneighbors(Xtrain[sampled_one_idx])
-                remove_idx = np.concatenate((sampled_zero_idx, rem_zero_idx[nearest_idx.flatten()]))
-            else:
-                remove_idx = sampled_zero_idx
-
-            Xtrain, Ytrain = np.delete(Xtrain, remove_idx, axis=0), np.delete(Ytrain, remove_idx)
 
         if mdl_idx < 3:
             mdl.fit(Xtrain, Ytrain)
@@ -363,7 +334,6 @@ for seed in range(Nrep * seedgroup, Nrep * (seedgroup+1)):
     for k in range(modelnum): 
         _, pred_all = LOO_train_modsel(k, Xtotal_use, Ytotal_use, np.arange(len(Xtotal_use)), None, strategy='oversample', m=len(Xmodsel_test))
         ALL_PRED_USE.append(pred_all) 
-
 
     # loo 1.2
     max_modsel_sel = np.max(model_selection_list, axis=0) 

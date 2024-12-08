@@ -12,6 +12,7 @@ from transformers import AutoTokenizer
 from transformers import AutoImageProcessor
 from _utils import *
 from chexbert import *
+import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', type=int, default=16,

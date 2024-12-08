@@ -7,13 +7,11 @@ import pickle
 import random
 import os
 
-# Let's only consider ADME datasets for now
 # regression adme datasets
 adme_regression_dataset = ['caco2_wang', 'lipophilicity_astrazeneca', 'ppbr_az', 'vdss_lombardo',  'half_life_obach', 'clearance_microsome_az', 'clearance_hepatocyte_az']
 tox_regression_dataset = ['ld50_zhu']
 
 # classification adme datasets
-# performance on classification is NOT THAT GOOD. We cannot consistenly beat the baselines.
 adme_classification_dataset = ['hia_hou', 'bioavailability_ma', 'bbb_martins', 'cyp2d6_substrate_carbonmangels', 'cyp3a4_substrate_carbonmangels', 'cyp2c9_substrate_carbonmangels']
 tox_classification_dataset = ['dili', 'herg']
 

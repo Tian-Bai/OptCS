@@ -1,6 +1,4 @@
-import getpass
 import os
-import sys
 
 # __USERNAME = getpass.getuser()
 

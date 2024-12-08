@@ -1,7 +1,4 @@
 import torch
-import json, os
-import argparse
-import sys
 from collections import OrderedDict
 from transformers import BertConfig, BertModel, BertTokenizer
 import torch
